@@ -79,11 +79,14 @@ class Dataset:
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __len__(self):
+        return len(self.images_mask_paths)
+
+    def __getitem__(self, idx):
         """
         returns (image, mask) where image is (z, x, y, c) and mask is (z, x, y)
         """
-        (image_paths, mask_path) = self.images_mask_paths[self.seek_idx]
+        (image_paths, mask_path) = self.images_mask_paths[idx]
 
         image = []
         for image_path in image_paths:
@@ -92,9 +95,16 @@ class Dataset:
 
         mask = self.read_image(mask_path)
 
-        image = np.transpose(image, (2, 0, 1, 3))  # (Z, H, W, C)
-        mask = np.transpose(mask, (2, 0, 1))  # (Z, H, W)
+        image = np.astype(np.transpose(image, (3, 2, 0, 1)), np.float32)  # (C, D, H, W)
+        mask = np.astype(np.transpose(mask, (2, 0, 1)), np.float32)  # (D, H, W)
 
+        image = image[:, 13:-14, :, :]
+        mask = mask[13:-14, :, :]
+
+        return image, mask
+
+    def __next__(self, idx):
+        image, mask = self.__getitem__(self, self.seek_idx)
         self.seek_idx += 1
         return image, mask
 

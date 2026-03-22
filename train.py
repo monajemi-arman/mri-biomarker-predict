@@ -4,21 +4,14 @@ from config import *
 import lightning as L
 from torch.utils.data import DataLoader
 
+
 def main():
     train_dataset = Dataset(*dataset_paths, split="train")
     val_dataset = Dataset(*dataset_paths, split="val")
 
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=4,
-        num_workers=4
-    )
+    train_loader = DataLoader(train_dataset, batch_size=4, num_workers=4)
 
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=2,
-        num_workers=2
-    )
+    val_loader = DataLoader(val_dataset, batch_size=2, num_workers=2)
 
     model = SegmentationModel()
 
@@ -31,12 +24,22 @@ def main():
                 monitor="train_loss",
                 save_top_k=3,
                 mode="min",
-                filename="segment-{epoch:02d}-{train_loss:.4f}"
+                filename="segment-{epoch:02d}-{train_loss:.4f}",
             )
-        ]
+        ],
     )
 
     trainer.fit(model, train_loader, val_loader)
+
+    print("Training has finished.")
+    print(
+        "Please go to 'lightning_logs' folder and choose a model checkpoint from the 'checkpoints' model."
+    )
+    print(
+        "Copy that file into the project root, which is the folder where this file (train.py) is located,\
+         and rename it to checkpoint.ckpt"
+    )
+
 
 if __name__ == "__main__":
     main()

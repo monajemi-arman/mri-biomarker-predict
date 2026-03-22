@@ -1,6 +1,7 @@
 # Project specific
 dataset/
 lightning_logs/
+checkpoint.ckpt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

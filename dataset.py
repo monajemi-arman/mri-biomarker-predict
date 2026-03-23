@@ -11,6 +11,7 @@ import random
 MODALITIES = ["T1c", "T2", "FLAIR"]
 IMAGE_EXT = ".nii.gz"
 train_val_test_ratio = (0.8, 0.1, 0.1)
+selected_metadata_keys = ["MGMT", "1p/19q", "IDH"]
 
 
 class Dataset:
@@ -35,8 +36,6 @@ class Dataset:
             self.images_mask_paths = self.validate_images_masks_paths(
                 images_dir, masks_dir
             )
-
-        self.metadata = self.read_csv_as_dicts(metadata_path)
         self.seek_idx = 0
 
     def validate_images_masks_paths(self, images_dir, masks_dir):
@@ -63,11 +62,6 @@ class Dataset:
 
         return images_mask_paths
 
-    def read_csv_as_dicts(self, file_path):
-        with open(file_path, newline="", encoding="utf-8") as csvfile:
-            reader = csv.DictReader(csvfile)
-            return [row for row in reader]
-
     def mask_name_to_base(self, filename):
         match = re.match(r"([A-Z]+-[A-Z]+-\d+)_", filename)
         if match:
@@ -83,6 +77,15 @@ class Dataset:
         return len(self.images_mask_paths)
 
     def __getitem__(self, idx):
+        image, mask = self.id_to_image_mask(idx)
+        return image, mask
+
+    def __next__(self):
+        item = self.__getitem__(self.seek_idx)
+        self.seek_idx += 1
+        return item
+
+    def id_to_image_mask(self, idx):
         """
         returns (image, mask) where image is (z, x, y, c) and mask is (z, x, y)
         """
@@ -101,11 +104,6 @@ class Dataset:
         image = image[:, 13:-14, :, :]
         mask = mask[13:-14, :, :]
 
-        return image, mask
-
-    def __next__(self, idx):
-        image, mask = self.__getitem__(self, self.seek_idx)
-        self.seek_idx += 1
         return image, mask
 
     def read_image(self, image_path):
@@ -133,3 +131,32 @@ class Dataset:
 
             with open(json_output_path, "w") as f:
                 json.dump(paths[idx], f)
+
+
+class HybridDataset(Dataset):
+    def __init__(self, images_dir, masks_dir, metadata_path, split=None):
+        super().__init__(images_dir, masks_dir, metadata_path, split=split)
+        self.metadata = self.read_csv_as_dicts(metadata_path)
+
+    def __getitem__(self, idx):
+        image, mask = self.id_to_image_mask(idx)
+        _, mask_path = self.images_mask_paths[idx]
+        patient_id = self.mask_name_to_base(os.path.basename(mask_path))
+        for row in self.metadata:
+            if row.get("ID") == patient_id:
+                selected_metadata = {}
+                for key in selected_metadata_keys:
+                    selected_metadata.update({key: row.get(key)})
+                return image, mask, selected_metadata
+
+    def read_csv_as_dicts(self, file_path):
+        with open(file_path, newline="", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
+            return [row for row in reader]
+
+    def mask_name_to_base(self, filename):
+        match = re.match(r"([A-Z]+-[A-Z]+-)(\d+)_", filename)
+        if match:
+            prefix, number = match.groups()
+            number = str(int(number))
+            return f"{prefix}{int(number):03d}"

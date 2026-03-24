@@ -1,4 +1,4 @@
-from config import dataset_json_paths
+from config import dataset_json_paths, selected_metadata_keys
 import csv
 import json
 import os
@@ -11,31 +11,25 @@ import random
 MODALITIES = ["T1c", "T2", "FLAIR"]
 IMAGE_EXT = ".nii.gz"
 train_val_test_ratio = (0.8, 0.1, 0.1)
-selected_metadata_keys = ["MGMT", "1p/19q", "IDH"]
 
 
 class Dataset:
     # --- Initialize --- #
-    def __init__(self, images_dir, masks_dir, metadata_path, split=None):
+    def __init__(self, images_dir, masks_dir, metadata_path, split="train"):
         """
         images_dir: path to images directory
         masks_dir: path to masks directory
         metadata: path to metadata csv file
         """
 
-        if split:
-            split_to_idx = {"train": 0, "val": 1, "test": 2}
-            json_path = dataset_json_paths[split_to_idx[split]]
+        split_to_idx = {"train": 0, "val": 1, "test": 2}
+        json_path = dataset_json_paths[split_to_idx[split]]
 
-            if not os.path.exists(json_path):
-                self.split_dataset(images_dir, masks_dir)
+        if not os.path.exists(json_path):
+            self.split_dataset(images_dir, masks_dir)
 
-            with open(json_path) as f:
-                self.images_mask_paths = json.load(f)
-        else:
-            self.images_mask_paths = self.validate_images_masks_paths(
-                images_dir, masks_dir
-            )
+        with open(json_path) as f:
+            self.images_mask_paths = json.load(f)
         self.seek_idx = 0
 
     def validate_images_masks_paths(self, images_dir, masks_dir):
@@ -81,6 +75,8 @@ class Dataset:
         return image, mask
 
     def __next__(self):
+        if self.seek_idx >= len(self):
+            raise StopIteration
         item = self.__getitem__(self.seek_idx)
         self.seek_idx += 1
         return item

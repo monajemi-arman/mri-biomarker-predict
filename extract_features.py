@@ -9,22 +9,33 @@ import torch.nn.functional as F
 import pandas as pd
 
 # negative, intact, wildtype are labeled as 0, 0, 0
-output_path = "features.csv"
+output_paths = {
+    "train_val": "features.csv",
+    "train": "features-train.csv",
+    "val": "features-val.csv",
+    "test": "features-test.csv",
+}
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def main():
-    train_dataset = HybridDataset(*dataset_paths, split="train")
+    for key in ["train", "val", "test"]:
+        extract_features_from_dataset(
+            HybridDataset(*dataset_paths, split=key), output_paths[key]
+        )
+    combine_csv_rows(output_paths["train"], output_paths["val"], output_paths["train_val"])
 
+
+def extract_features_from_dataset(dataset, output_csv):
     model = SegmentationModel.load_from_checkpoint(checkpoint_path=checkpoint_path)
     model.to(device)
     model.eval()
 
     all_rows = []
 
-    metadata_keys = list(train_dataset[0][2].keys())
+    metadata_keys = list(dataset[0][2].keys())
 
-    for image, mask, metadata in train_dataset:
+    for image, mask, metadata in dataset:
         deep_features = extract_deep_features(image, mask, model)  # [1, C*2]
         features_vector = deep_features.squeeze(0).cpu().numpy()  # [C*2]
 
@@ -42,7 +53,7 @@ def main():
     columns = feature_columns + metadata_keys
 
     df = pd.DataFrame(all_rows, columns=columns)
-    df.to_csv("features.csv", index=False)
+    df.to_csv(output_csv, index=False)
 
 
 def encode_metadata(metadata):
@@ -120,6 +131,16 @@ def extract_deep_features(image, mask, model, device=device):
     )  # [1, 2*C]
 
     return concatenated_features
+
+
+def combine_csv_rows(file1, file2, output_file):
+    df1 = pd.read_csv(file1)
+    df2 = pd.read_csv(file2)
+
+    combined = pd.concat([df1, df2], axis=0, ignore_index=True)
+    combined.to_csv(output_file, index=False)
+
+    return combined
 
 
 if __name__ == "__main__":

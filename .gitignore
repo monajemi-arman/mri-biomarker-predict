@@ -4,6 +4,7 @@ lightning_logs/
 checkpoint.ckpt
 features.csv
 features-*.csv
+models_xgboost/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -8,8 +8,12 @@
 
 ## Usage
 * **Clone** this repository
-* **Download** the dataset and copy files into `dataset/`. In masks folder, we only put whole tumor segmentation masks.
-* Make sure the **file structure** is according to this:
+* **Download** the dataset and move it into the project root of this repository.
+* **Prepare dataset** using the next command:
+```
+bash prepare_dataset.sh
+```
+* After doing the previous step, make sure the **file structure** is according to this:
 ```md
     - dataset/
         - images/
@@ -20,15 +24,15 @@
             - ...
         - UCSF-PDGM-metadata_v2.csv
 ```
-* Train the deep learning model
+* **Train the deep learning model**
 ```
 python train.py
 ```
-* Extract features and export to CSV
+* **Extract features and export to CSV**
 ```
 python extract_features.py
 ```
-* Train XGBoost models using the exported CSV
+* **Train XGBoost models using the exported CSV**
 ```
 python train_xgboost.py
 ```

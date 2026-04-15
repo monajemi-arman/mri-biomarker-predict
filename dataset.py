@@ -41,7 +41,7 @@ class Dataset:
         for filename in os.listdir(masks_dir):
             base_name = self.mask_name_to_base(filename)
             mask_path = os.path.join(
-                masks_dir, base_name + "_tumor_segmentation_whole_tumor" + IMAGE_EXT
+                masks_dir, base_name + "_tumor_segmentation" + IMAGE_EXT
             )
             image_paths = []
             for modality in MODALITIES:

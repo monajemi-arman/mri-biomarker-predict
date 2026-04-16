@@ -12,7 +12,8 @@ import torch
 TRAIN_PATH = "features.csv"
 TEST_PATH = "features-test.csv"
 
-TARGETS = ["MGMT status", "1p/19q", "IDH"]
+TARGETS = ["IDH"]
+# TARGETS = ["MGMT status", "1p/19q", "IDH"]
 FEATURES = [f"f{i}" for i in range(512)]
 
 OUTPUT_DIR = "models_xgboost"

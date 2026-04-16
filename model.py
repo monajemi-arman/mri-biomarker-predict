@@ -3,17 +3,20 @@ import torch
 import torch.nn as nn
 from monai.networks.nets import UNet
 
+
 class SegmentationModel(L.LightningModule):
     def __init__(self, in_channels=3, out_channels=1, learning_rate=1e-4):
         super().__init__()
+
         self.model = UNet(
-            spatial_dims=3,          # 3D convolutions
-            in_channels=in_channels,  # number of channels in your image
+            spatial_dims=3,
+            in_channels=in_channels,
             out_channels=out_channels,
-            channels=(16, 32, 64, 128, 256),  # encoder/decoder channels
-            strides=(2, 2, 2, 2),    # downsampling
+            channels=(16, 32, 64, 128, 256),
+            strides=(2, 2, 2, 2),
             num_res_units=2,
         )
+
         self.loss = nn.BCEWithLogitsLoss()
         self.lr = learning_rate
 
@@ -21,12 +24,39 @@ class SegmentationModel(L.LightningModule):
         return self.model(x)
 
     def training_step(self, batch, batch_idx):
-        x, mask = batch  # x: (B, C, Z, H, W), mask: (B, 1, Z, H, W)
-        pred = self(x).squeeze(1)
-        assert pred.shape == mask.shape, f"{pred.shape} != {mask.shape}"
+        x, mask = batch
+        mask = mask.unsqueeze(1).float()
+
+        pred = self(x)
         loss = self.loss(pred, mask)
-        self.log("train_loss", loss)
+
+        self.log("train_loss", loss, prog_bar=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, mask = batch
+        mask = mask.unsqueeze(1).float()
+
+        pred = self(x)
+        loss = self.loss(pred, mask)
+
+        self.log("val_loss", loss, prog_bar=True)
         return loss
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.lr)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="min",
+            factor=0.5,  # halve LR when stuck
+            patience=3,
+        )
+
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": "val_loss",
+            },
+        }

@@ -4,3 +4,5 @@ nibabel
 lightning
 monai
 xgboost
+tensorboard
+triton

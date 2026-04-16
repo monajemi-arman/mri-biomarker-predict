@@ -24,14 +24,19 @@ bash prepare_dataset.sh
             - ...
         - UCSF-PDGM-metadata_v2.csv
 ```
+
 * **Train the deep learning model**
 ```
 python train.py
 ```
+
+* **Move model checkpoint**: After training the deep learning model, you will find checkpoints under `lightning_logs/version_0/checkpoints`. Choose one based on lowest loss, copy it to main project folder and name it `checkpoint.ckpt` so `extract_features.py` will be able to find it.
+
 * **Extract features and export to CSV**
 ```
 python extract_features.py
 ```
+
 * **Train XGBoost models using the exported CSV**
 ```
 python train_xgboost.py

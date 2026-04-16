@@ -4,7 +4,7 @@ import torch.nn as nn
 from monai.networks.nets import UNet
 
 class SegmentationModel(L.LightningModule):
-    def __init__(self, in_channels=3, out_channels=1, learning_rate=1e-3):
+    def __init__(self, in_channels=3, out_channels=1, learning_rate=1e-4):
         super().__init__()
         self.model = UNet(
             spatial_dims=3,          # 3D convolutions

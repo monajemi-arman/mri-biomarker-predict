@@ -16,9 +16,10 @@ def main():
     model = SegmentationModel()
 
     trainer = L.Trainer(
-        max_epochs=50,
+        max_epochs=100,
         devices=1,
         log_every_n_steps=10,
+        gradient_clip_val=1.0,
         callbacks=[
             L.pytorch.callbacks.ModelCheckpoint(
                 monitor="train_loss",

@@ -23,6 +23,7 @@ class SegmentationModel(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, mask = batch  # x: (B, C, Z, H, W), mask: (B, 1, Z, H, W)
         pred = self(x).squeeze(1)
+        assert pred.shape == mask.shape, f"{pred.shape} != {mask.shape}"
         loss = self.loss(pred, mask)
         self.log("train_loss", loss)
         return loss

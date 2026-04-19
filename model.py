@@ -5,7 +5,7 @@ from monai.networks.nets import UNet
 
 
 class SegmentationModel(L.LightningModule):
-    def __init__(self, in_channels=3, out_channels=1, learning_rate=1e-4):
+    def __init__(self, in_channels=3, out_channels=1, learning_rate=1e-3):
         super().__init__()
 
         self.model = UNet(
@@ -16,6 +16,8 @@ class SegmentationModel(L.LightningModule):
             strides=(2, 2, 2, 2),
             num_res_units=2,
         )
+
+        self.bottleneck = lambda model: model.model[1].submodule[1].submodule[1].submodule[1].submodule
 
         self.loss = nn.BCEWithLogitsLoss()
         self.lr = learning_rate

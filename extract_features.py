@@ -23,7 +23,9 @@ def main():
         extract_features_from_dataset(
             HybridDataset(*dataset_paths, split=key), output_paths[key]
         )
-    combine_csv_rows(output_paths["train"], output_paths["val"], output_paths["train_val"])
+    combine_csv_rows(
+        output_paths["train"], output_paths["val"], output_paths["train_val"]
+    )
 
 
 def extract_features_from_dataset(dataset, output_csv):
@@ -93,9 +95,7 @@ def extract_deep_features(image, mask, model, device=device):
             bottleneck_features.append(output)
 
         # deepest encoder residual unit
-        bottleneck_layer = (
-            model.model.model[1].submodule[1].submodule[1].submodule[1].submodule
-        )
+        bottleneck_layer = model.bottleneck(model.model)
         handle = bottleneck_layer.register_forward_hook(hook_fn)
 
         with torch.no_grad():

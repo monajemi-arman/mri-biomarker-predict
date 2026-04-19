@@ -1,3 +1,4 @@
+from monai.data import MetaTensor
 from config import dataset_json_paths, selected_metadata_keys
 import csv
 import json
@@ -15,7 +16,7 @@ train_val_test_ratio = (0.8, 0.1, 0.1)
 
 class Dataset:
     # --- Initialize --- #
-    def __init__(self, images_dir, masks_dir, metadata_path, split="train"):
+    def __init__(self, images_dir, masks_dir, metadata_path, split="train", transforms=None):
         """
         images_dir: path to images directory
         masks_dir: path to masks directory
@@ -31,6 +32,8 @@ class Dataset:
         with open(json_path) as f:
             self.images_mask_paths = json.load(f)
         self.seek_idx = 0
+
+        self.transforms = transforms
 
     def validate_images_masks_paths(self, images_dir, masks_dir):
         images_mask_paths = []
@@ -72,7 +75,15 @@ class Dataset:
 
     def __getitem__(self, idx):
         image, mask = self.id_to_image_mask(idx)
-        return image, mask
+        sample = {
+            "image": MetaTensor(image.astype(np.float32)),
+            "mask": MetaTensor(mask.astype(np.float32)),
+        }
+
+        if self.transforms:
+            sample = self.transforms(sample)
+
+        return sample["image"], sample["mask"]
 
     def __next__(self):
         if self.seek_idx >= len(self):
@@ -130,8 +141,8 @@ class Dataset:
 
 
 class HybridDataset(Dataset):
-    def __init__(self, images_dir, masks_dir, metadata_path, split=None):
-        super().__init__(images_dir, masks_dir, metadata_path, split=split)
+    def __init__(self, images_dir, masks_dir, metadata_path, split=None, transforms=None):
+        super().__init__(images_dir, masks_dir, metadata_path, split=split, transforms=None)
         self.metadata = self.read_csv_as_dicts(metadata_path)
 
     def __getitem__(self, idx):

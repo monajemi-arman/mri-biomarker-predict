@@ -9,6 +9,7 @@ from lightning.pytorch.callbacks import (
     EarlyStopping,
     LearningRateMonitor,
 )
+from transforms import train_transforms
 
 
 def main():
@@ -21,7 +22,7 @@ def main():
     )
     parsed = parser.parse_args()
 
-    train_dataset = Dataset(*dataset_paths, split="train")
+    train_dataset = Dataset(*dataset_paths, split="train", transforms=train_transforms)
     val_dataset = Dataset(*dataset_paths, split="val")
 
     train_loader = DataLoader(train_dataset, batch_size=4, num_workers=4)
